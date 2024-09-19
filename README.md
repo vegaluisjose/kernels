@@ -3,6 +3,10 @@
 * Install dependencies
 
 ```bash
+conda install nvidia/label/cuda-12.6.1::cuda
+```
+
+```bash
 python3 -m pip install triton fairscale fire torch
 ```
 
