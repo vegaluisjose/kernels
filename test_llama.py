@@ -2,6 +2,9 @@ import os
 
 from pathlib import Path
 from models.llama.llama import Llama, Dialog
+from time import perf_counter
+
+import torch.distributed as dist
 
 
 def main():
@@ -26,12 +29,16 @@ def main():
         use_triton=use_triton,
     )
 
+    tic = perf_counter()
+
     results = generator.chat_completion(
         dialogs,
         max_gen_len=max_gen_len,
         temperature=temperature,
         top_p=top_p,
     )
+
+    toc = perf_counter()
 
     print("\nResults:\n")
     for dialog, result in zip(dialogs, results):
@@ -40,7 +47,7 @@ def main():
         print(
             f"{result['generation']['role'].capitalize()}: {result['generation']['content']}"
         )
-        print("\n==================================\n")
+        print(f"Elapsed time: {toc-tic}\n")
 
 
 if __name__ == "__main__":
@@ -48,4 +55,10 @@ if __name__ == "__main__":
     os.environ["WORLD_SIZE"] = "1"
     os.environ["MASTER_ADDR"] = "127.0.0.1"
     os.environ["MASTER_PORT"] = "29500"
+
     main()
+
+    # fix the following warning:
+    # Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL.
+    if dist.is_initialized():
+        dist.destroy_process_group()
