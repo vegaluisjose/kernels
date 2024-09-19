@@ -2,6 +2,7 @@ import os
 
 from pathlib import Path
 from models.llama.llama import Llama, Dialog
+from models.llama.llama.tokenizer import Tokenizer, ChatFormat
 from time import perf_counter
 
 import torch.distributed as dist
@@ -40,14 +41,19 @@ def main():
 
     toc = perf_counter()
 
+    formatter = ChatFormat(Tokenizer(str(tokenizer_path)))
+
     print("\nResults:\n")
     for dialog, result in zip(dialogs, results):
+        tokens = formatter.encode_dialog_prompt(dialog=dialog)
         for msg in dialog:
             print(f"{msg['role'].capitalize()}: {msg['content']}")
         print(
             f"{result['generation']['role'].capitalize()}: {result['generation']['content']}"
         )
-        print(f"Elapsed time: {toc-tic}\n")
+        print(f"\nMetrics:")
+        print(f"Elapsed time (s): {toc-tic}")
+        print(f"Throughput (tok/s): {len(tokens)/(toc-tic)}")
 
 
 if __name__ == "__main__":
